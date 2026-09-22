@@ -65,7 +65,9 @@ jobs:
           set -euo pipefail
           apk='dist/android/zhenguojian-0.2.16+22-arm64-v8a.apk'
           test -f "$apk"
-          sha256sum -c dist/android/SHA256SUMS.txt
+          pushd dist/android
+          sha256sum -c SHA256SUMS.txt
+          popd
           apksigner="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
           test -n "$apksigner"
           "$apksigner" verify --verbose --print-certs "$apk" | tee dist/android/apk-verification.txt
