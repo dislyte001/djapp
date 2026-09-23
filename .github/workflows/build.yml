@@ -94,7 +94,6 @@ jobs:
           if-no-files-found: error
           retention-days: 14
   windows:
-    needs: checks
     runs-on: windows-latest
     timeout-minutes: 45
     strategy:
