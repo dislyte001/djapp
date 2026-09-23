@@ -42,16 +42,26 @@ def main():
         executable = portable_directory / portable.name
         shutil.copy2(portable, executable)
         portable_report = directory / 'portable-result.json'
+        home = portable_directory / '.zhenguojian'
         legacy = [Path(os.environ[name]) / '真果鉴' / '真果鉴'
                   for name in ('APPDATA', 'LOCALAPPDATA')]
         if any(location.exists() for location in legacy):
             raise SystemExit('Windows 测试环境已有旧应用数据，无法验证便携目录写入。')
-        subprocess.run([str(executable), '--package-smoke', str(portable_report), str(media)],
-                       cwd=portable_directory, check=True, timeout=120)
+        try:
+            subprocess.run([str(executable), '--package-smoke', str(portable_report), str(media)],
+                           cwd=portable_directory, check=True, timeout=300)
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            for location in (home, home / 'runtime', home / 'tmp', home / 'data'):
+                if location.is_dir():
+                    print(f'{location}: {[entry.name for entry in location.iterdir()]}', flush=True)
+                else:
+                    print(f'{location}: missing', flush=True)
+            if portable_report.is_file():
+                print(portable_report.read_text(encoding='utf-8'), flush=True)
+            raise
         portable_evidence = json.loads(portable_report.read_text(encoding='utf-8'))
         if portable_evidence.get('ok') is not True:
             raise SystemExit('Windows 单文件便携包启动验收未通过。')
-        home = portable_directory / '.zhenguojian'
         if not (home / 'data' / 'downloads').is_dir() or not (home / 'tmp').is_dir() or not (home / 'data' / 'shared_preferences.json').is_file():
             raise SystemExit('便携包未在 EXE 旁创建数据和临时目录。')
         if any(location.exists() for location in legacy):

@@ -27,7 +27,11 @@ var edition = "zhenguojian"
 
 func main() {
 	if err := launch(); err != nil {
-		showError(err)
+		if len(os.Args) > 1 && os.Args[1] == "--package-smoke" {
+			fmt.Fprintln(os.Stderr, err)
+		} else {
+			showError(err)
+		}
 		os.Exit(1)
 	}
 }
