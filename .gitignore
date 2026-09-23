@@ -18,6 +18,7 @@ key.properties
 .idea/
 *.iml
 windows/runner/duanju_core.h
+native/portable/payload/archive.zip
 windows/flutter/generated_plugin_registrant.*
 windows/flutter/generated_plugins.cmake
 .venv/

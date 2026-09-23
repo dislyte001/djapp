@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:media_kit/media_kit.dart';
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core_bridge.dart';
 import 'media_pipeline.dart';
@@ -13,6 +16,24 @@ Future<void> runPackageSmoke(List<String> arguments) async {
   try {
     final repository = NativeRepository();
     await repository.initialize();
+    final portableHome = Platform.environment['ZJG_PORTABLE_HOME'];
+    if (portableHome != null) {
+      final root = path.normalize(portableHome);
+      final support = await getApplicationSupportDirectory();
+      final cache = await getApplicationCacheDirectory();
+      final temporary = await getTemporaryDirectory();
+      if (support.path != path.join(root, 'data') ||
+          cache.path != path.join(root, 'data', 'platform-cache') ||
+          temporary.path != path.join(root, 'tmp')) {
+        throw StateError('便携数据路径不正确');
+      }
+      final preferences = await SharedPreferences.getInstance();
+      if (!await preferences.setString('portablePackageSmoke', 'ok') ||
+          preferences.getString('portablePackageSmoke') != 'ok' ||
+          !await preferences.remove('portablePackageSmoke')) {
+        throw StateError('便携偏好设置无法读写');
+      }
+    }
     final executor = FFmpegExecutor();
     final probe = await executor.probe(input);
     verifyMediaDuration(probe, 3);

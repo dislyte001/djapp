@@ -1,0 +1,1 @@
+The release build places archive.zip in this directory before compiling the launcher.

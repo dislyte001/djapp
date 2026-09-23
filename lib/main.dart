@@ -18,9 +18,22 @@ import 'media_library.dart';
 import 'package_smoke.dart';
 import 'lan_controller.dart';
 import 'player_screen.dart';
+import 'portable_storage.dart';
 
 Future<void> main(List<String> arguments) async {
   WidgetsFlutterBinding.ensureInitialized();
+  await configurePortableStorage();
+  if (Platform.isWindows && arguments.firstOrNull == '--portable-probe') {
+    try {
+      await SharedPreferences.getInstance();
+      final repository = NativeRepository();
+      await repository.initialize();
+      await repository.downloads();
+      exit(0);
+    } catch (_) {
+      exit(1);
+    }
+  }
   if (Platform.isAndroid) {
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setSystemUIOverlayStyle(AppTheme.systemBars(Brightness.dark));

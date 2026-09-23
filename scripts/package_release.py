@@ -1,7 +1,9 @@
 import argparse
 import hashlib
+import os
 import re
 import shutil
+import subprocess
 import zipfile
 from pathlib import Path
 
@@ -40,7 +42,7 @@ if options.platform == 'android':
 else:
     bundle = root / 'build' / 'windows' / 'x64' / 'runner' / 'Release'
     required = ['zhenguojian.exe', 'duanju_core.dll', 'flutter_windows.dll', 'libffmpegkit.dll',
-                'libmpv-2.dll', 'msvcp140.dll', 'vcruntime140.dll',
+                'libmpv-2.dll', 'msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll',
                 'data/icudtl.dat', 'data/app.so']
     missing = [name for name in required if not (bundle / name).is_file()]
     if missing:
@@ -54,6 +56,22 @@ else:
                     relative = variant.slug + '.exe'
                 archive.write(source, relative)
     artifacts.append(target)
+    go = shutil.which('go')
+    if not go:
+        raise SystemExit('缺少 Go，无法生成单文件便携版。')
+    payload = root / 'native' / 'portable' / 'payload' / 'archive.zip'
+    portable = output / f'{variant.slug}-{version}-windows-x64-portable.exe'
+    shutil.copyfile(target, payload)
+    try:
+        build_environment = os.environ.copy()
+        build_environment['CGO_ENABLED'] = '0'
+        subprocess.run([go, 'build', '-trimpath',
+                        '-ldflags=-H windowsgui -X main.edition=' + variant.slug,
+                        '-o', str(portable), './portable'],
+                       cwd=root / 'native', env=build_environment, check=True)
+    finally:
+        payload.unlink(missing_ok=True)
+    artifacts.append(portable)
 
 checksums = []
 for artifact in sorted(output.glob(f'*-{version}-*')):
