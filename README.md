@@ -578,12 +578,12 @@ Windows 便携版从 Actions 下载 `zhenguojian-<版本>-windows-x64-portable.e
 
 将 `guoapp` 源码发布到仓库根目录，保留 `.github`、锁文件、`native` 和平台工程；不用上传 SDK、依赖目录、SO、DLL 或缓存。
 
-推送 `main` / `master`、`v*` 标签、提交 PR，或手动运行 **Build app packages**，会先检查再构建：
+推送 `main` / `master`、`v*` 标签、提交 PR，或手动运行 **Build app packages**，会运行检查与构建；Windows 试用包独立于通用检查构建：
 
 | 红果版 Artifact | 全站源版 Artifact | 内容 |
 | --- | --- | --- |
 | `hongguojian-android` | `zhenguojian-android` | 三种架构 APK 和 SHA256 |
-| `hongguojian-windows` | `zhenguojian-windows` | 完整 ZIP、单文件便携 EXE 和 SHA256；检查两种包的原生核心、FFprobe、换封装、播放器启动及便携路径 |
+| `hongguojian-windows` | `zhenguojian-windows` | 完整 ZIP、单文件便携 EXE 和 SHA256；上传后继续检查原生核心、FFprobe、换封装、播放器启动及便携路径，失败时仍标记作业失败 |
 | `hongguojian-ios-unsigned` | `zhenguojian-ios-unsigned` | 未签名 `.app` ZIP 和 SHA256，不能直接当已签名 IPA 安装 |
 
 Actions 分别传入默认参数与 `--all-sources` 构建两版，Flutter 和 Go 回归也覆盖两种编译配置。产物保留 14 天，不自动创建 GitHub Release。首次平台构建结果以实际 Actions 输出为准。
@@ -871,7 +871,7 @@ git switch -c restore-v0.2.3 v0.2.3
 
 ### 当前检查与平台状态
 
-0.2.17+23 加入 Windows 单文件启动器、便携路径和首次旧数据迁移；普通 ZIP、Android 和 iOS 原数据路径不变。源码尚未在 Windows 构建或实际运行，迁移和目录写入边界等待 Actions 及用户电脑验证，不能将源码视为已交付可用 EXE。
+0.2.17+23 加入 Windows 单文件启动器、便携路径和首次旧数据迁移；普通 ZIP、Android 和 iOS 原数据路径不变。GitHub Actions 已在 Windows runner 上编译出 ZIP 与便携 EXE，原生启动器测试通过，合成媒体检查已确认便携目录及偏好设置写入；播放器进度检查在 runner 上 20 秒超时，通用 Flutter 测试仍有 23 项失败。试用包保持 `unverified`，实际播放、旧数据迁移及用户电脑的磁盘行为仍待平台验收。
 
 0.2.16+22 接入黄剧站源，包含访客授权、动态分类、热门 / 最新、目录与搜索分页、详情和签名 Cookie 媒体链路；榜单图标移到顶部标题栏“排序与筛选”后面，分类行不再显示榜单。新增站源纳入既有权限、下载、资料和局域网互联范围；旧版设备通过共同站源协商保留兼容。
 
