@@ -21,7 +21,7 @@ def main():
     variant = BuildVariant(parser.parse_args().all_sources)
     if platform.system() != 'Windows':
         raise SystemExit('此检查需要 Windows。')
-    version = re.search(r'^version:\s*(\S+)', (root / 'pubspec.yaml').read_text(), re.MULTILINE).group(1)
+    version = re.search(r'^version:\s*(\S+)', (root / 'pubspec.yaml').read_text(encoding='utf-8'), re.MULTILINE).group(1)
     package = root / 'dist' / 'windows' / f'{variant.slug}-{version}-windows-x64.zip'
     portable = root / 'dist' / 'windows' / f'{variant.slug}-{version}-windows-x64-portable.exe'
     sums = (root / 'dist' / 'windows' / 'SHA256SUMS.txt').read_text(encoding='ascii')
@@ -48,7 +48,7 @@ def main():
             raise SystemExit('Windows 测试环境已有旧应用数据，无法验证便携目录写入。')
         subprocess.run([str(executable), '--package-smoke', str(portable_report), str(media)],
                        cwd=portable_directory, check=True, timeout=120)
-        portable_evidence = json.loads(portable_report.read_text())
+        portable_evidence = json.loads(portable_report.read_text(encoding='utf-8'))
         if portable_evidence.get('ok') is not True:
             raise SystemExit('Windows 单文件便携包启动验收未通过。')
         home = portable_directory / '.zhenguojian'
@@ -61,13 +61,13 @@ def main():
         report = directory / 'result.json'
         subprocess.run([str(directory / (variant.slug + '.exe')), '--package-smoke', str(report), str(media)],
                        cwd=directory, check=True, timeout=90)
-        evidence = json.loads(report.read_text())
+        evidence = json.loads(report.read_text(encoding='utf-8'))
         if evidence.get('ok') is not True:
             raise SystemExit('Windows 包启动验收未通过。')
         evidence['portable'] = portable_evidence
         output = root / 'build' / 'windows-package-smoke.json'
         output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(json.dumps(evidence, indent=2) + '\n')
+        output.write_text(json.dumps(evidence, indent=2) + '\n', encoding='utf-8')
         print(json.dumps(evidence))
 
 
