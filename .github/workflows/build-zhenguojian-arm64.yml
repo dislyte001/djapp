@@ -60,28 +60,7 @@ jobs:
           python scripts/configure_signing.py
       - run: python scripts/build_android.py --all-sources --abi arm64-v8a
       - name: Verify APK
-        shell: bash
-        run: |
-          set -euo pipefail
-          apk='dist/android/zhenguojian-0.2.16+22-arm64-v8a.apk'
-          test -f "$apk"
-          pushd dist/android
-          sha256sum -c SHA256SUMS.txt
-          popd
-          apksigner="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
-          test -n "$apksigner"
-          "$apksigner" verify --verbose --print-certs "$apk" | tee dist/android/apk-verification.txt
-          grep -F 'Verified' dist/android/apk-verification.txt
-          aapt="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
-          test -n "$aapt"
-          "$aapt" dump badging "$apk" | tee dist/android/apk-badging.txt
-          grep -F "package: name='com.duanju.duanju_app' versionCode='2022' versionName='0.2.16'" dist/android/apk-badging.txt
-          grep -F "application-label:'真果鉴'" dist/android/apk-badging.txt
-          zipinfo -1 "$apk" | tee dist/android/apk-contents.txt
-          grep -F 'lib/arm64-v8a/libduanju_core.so' dist/android/apk-contents.txt
-          if grep -E '^lib/(armeabi-v7a|x86_64)/' dist/android/apk-contents.txt; then
-            exit 1
-          fi
+        run: python scripts/verify_android_release.py --all-sources
       - name: Remove signing files
         if: always()
         run: python scripts/configure_signing.py --clean

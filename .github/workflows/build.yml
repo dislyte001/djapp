@@ -2,8 +2,7 @@ name: Build app packages
 
 on:
   push:
-    branches: [main, master, lite]
-    tags: ['v*']
+    branches: [main, master]
   pull_request:
   workflow_dispatch:
 
@@ -46,7 +45,6 @@ jobs:
         working-directory: native
 
   android:
-    needs: checks
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -77,13 +75,19 @@ jobs:
           cache: true
       - run: sdkmanager 'ndk;28.2.13676358'
       - name: Configure Android signing
-        run: python scripts/configure_signing.py
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          test -n "$ANDROID_KEYSTORE_PASSWORD"
+          test -n "$ANDROID_KEY_ALIAS"
+          test -n "$ANDROID_KEY_PASSWORD"
+          python scripts/configure_signing.py
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-      - run: python scripts/build_android.py ${{ matrix.arguments }}
+      - run: python scripts/build_android.py --abi arm64-v8a ${{ matrix.arguments }}
+      - run: python scripts/verify_android_release.py ${{ matrix.arguments }}
       - name: Remove signing files
         if: always()
         run: python scripts/configure_signing.py --clean
@@ -125,13 +129,13 @@ jobs:
       - run: choco install ffmpeg --no-progress -y
       - run: go test ./portable
         working-directory: native
+      - run: python scripts/smoke_windows.py ${{ matrix.arguments }}
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.edition }}-windows
           path: dist/windows/*
           if-no-files-found: error
           retention-days: 14
-      - run: python scripts/smoke_windows.py ${{ matrix.arguments }}
 
   ios:
     needs: checks

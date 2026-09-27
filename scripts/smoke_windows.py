@@ -35,8 +35,10 @@ def main():
             archive.extractall(directory)
         media = directory / 'fixture.mp4'
         subprocess.run(['ffmpeg', '-v', 'error', '-y', '-f', 'lavfi',
-                        '-i', 'testsrc2=size=160x90:rate=12', '-t', '3',
-                        '-c:v', 'libx264', '-threads', '1', str(media)], check=True)
+                        '-i', 'testsrc2=size=160x90:rate=12', '-f', 'lavfi',
+                        '-i', 'sine=frequency=440:sample_rate=44100', '-t', '3',
+                        '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-threads', '1',
+                        '-c:a', 'aac', '-b:a', '64k', str(media)], check=True)
         portable_directory = directory / 'portable'
         portable_directory.mkdir()
         executable = portable_directory / portable.name

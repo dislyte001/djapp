@@ -13,6 +13,8 @@ Future<void> runPackageSmoke(List<String> arguments) async {
   if (arguments.length != 3) exit(2);
   final report = File(arguments[1]), input = arguments[2];
   Player? player;
+  final playbackErrors = <String>[];
+  final playbackLogs = <String>[];
   try {
     final repository = NativeRepository();
     await repository.initialize();
@@ -45,6 +47,8 @@ Future<void> runPackageSmoke(List<String> arguments) async {
       input,
       '-map',
       '0:v:0',
+      '-map',
+      '0:a:0',
       '-c',
       'copy',
       remuxed.path,
@@ -53,7 +57,17 @@ Future<void> runPackageSmoke(List<String> arguments) async {
     player = Player(
       configuration: const PlayerConfiguration(muted: true, vo: 'null'),
     );
-    await player.setAudioTrack(AudioTrack.no());
+    final nativePlayer = player.platform;
+    if (nativePlayer is! NativePlayer) {
+      throw StateError('本机播放器未初始化');
+    }
+    await nativePlayer.setProperty('vid', 'auto');
+    await nativePlayer.setProperty('ao', 'null');
+    player.stream.error.listen(playbackErrors.add);
+    player.stream.log.listen((entry) {
+      playbackLogs.add(entry.toString());
+      if (playbackLogs.length > 20) playbackLogs.removeAt(0);
+    });
     final advancing = player.stream.position.firstWhere(
       (time) => time.inMilliseconds >= 400,
     );
@@ -72,11 +86,22 @@ Future<void> runPackageSmoke(List<String> arguments) async {
     await player.dispose();
     exit(0);
   } catch (error) {
+    final diagnostic = {
+      'ok': false,
+      'error': error.toString(),
+      if (player != null)
+        'player': {
+          'position': player.state.position.toString(),
+          'duration': player.state.duration.toString(),
+          'playing': player.state.playing,
+          'completed': player.state.completed,
+          'buffering': player.state.buffering,
+          'errors': playbackErrors,
+          'logs': playbackLogs,
+        },
+    };
     await player?.dispose();
-    await report.writeAsString(
-      jsonEncode({'ok': false, 'error': error.toString()}),
-      flush: true,
-    );
+    await report.writeAsString(jsonEncode(diagnostic), flush: true);
     exit(1);
   }
 }
