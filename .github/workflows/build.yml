@@ -2,7 +2,7 @@ name: Build app packages
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, lite]
     tags: ['v*']
   pull_request:
   workflow_dispatch:
