@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'core_bridge.dart';
 import 'local_store.dart';
 import 'models.dart';
+import 'remote_widgets.dart';
 import 'source_status.dart';
 
 String sourceTimestamp(DateTime? value) {
@@ -46,6 +47,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
   @override
   void initState() {
     super.initState();
+    ensureTelevisionFocus(context);
     unawaited(_refresh());
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       _ticks++;
@@ -168,6 +170,11 @@ class _SourcesScreenState extends State<SourcesScreen> {
           final bFirst = b.id == widget.initialSource ? 0 : 1;
           return aFirst.compareTo(bFirst);
         });
+      final viewPaddingBottom = MediaQuery.viewPaddingOf(context).bottom;
+      final paddingBottom = MediaQuery.paddingOf(context).bottom;
+      final bottomInset = viewPaddingBottom > paddingBottom
+          ? viewPaddingBottom
+          : paddingBottom;
       return Scaffold(
         appBar: AppBar(title: const Text('站源管理')),
         body: Center(
@@ -176,7 +183,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
             child: RefreshIndicator(
               onRefresh: _refresh,
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomInset),
                 children: [
                   const Padding(
                     padding: EdgeInsets.only(bottom: 16),
