@@ -38,8 +38,8 @@ def main():
                             check=True, capture_output=True, text=True).stdout
     if 'Verified using v2 scheme (APK Signature Scheme v2): true' not in signed:
         raise SystemExit('APK 缺少 v2 签名')
-    signer = re.search(r'Signer #1 certificate SHA-256 digest:\s*([0-9a-fA-F]+)', signed)
-    if not signer or signer.group(1).lower() != certificate:
+    signers = re.findall(r'certificate SHA-256 digest:\s*([0-9a-fA-F]+)', signed)
+    if not signers or any(signer.lower() != certificate for signer in signers):
         raise SystemExit('APK 签名证书不匹配')
     badging = subprocess.run([android_tool('aapt'), 'dump', 'badging', str(apk)],
                              check=True, capture_output=True, text=True).stdout
